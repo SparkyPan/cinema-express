@@ -142,18 +142,33 @@ RESPONSE FORMAT - ONLY JSON:
 DO NOT include any text outside this JSON structure.`;
 
  // --- REPLACE DIRECT ANTHROPIC CALL WITH THIS ---
+// --- START REPLACEMENT: call your serverless API instead of Anthropic directly ---
 const serverRes = await fetch('/api/generate', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ prompt, model: 'claude-sonnet-4-20250514', max_tokens: 1500 })
 });
 
-const data = await serverRes.json().catch(() => null);
+let data;
+try {
+  data = await serverRes.json();
+} catch (err) {
+  console.error('Failed parsing JSON from /api/generate', err);
+  throw new Error('Invalid JSON from server');
+}
 
 if (!serverRes.ok) {
-  console.error('Server error from /api/generate:', data);
-  throw new Error((data && (data.error || data.message)) || 'Server returned an error');
+  console.error('Server returned error from /api/generate:', data);
+  // show a useful error message for debugging
+  throw new Error(data?.error || data?.message || 'Server error calling /api/generate');
 }
+
+// Anthropic text is usually at data.content[0].text
+const responseText = (data && data.content && data.content[0] && data.content[0].text)
+  ? data.content[0].text
+  : JSON.stringify(data);
+// --- END REPLACEMENT ---
+
 
 // data is the JSON returned by your serverless function.
 // The Anthropics Messages API returns text at data.content[0].text in your server response
