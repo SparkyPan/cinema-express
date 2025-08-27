@@ -25,82 +25,82 @@ const CinemaExpressRewriter = () => {
   };
 
   const generateArticle = async () => {
-    if (!inputs.newsLink.trim()) {
-      alert('Please provide at least a news update link or content to proceed.');
-      return;
-    }
+  if (!inputs.newsLink.trim()) {
+    alert('Please provide at least a news update link or content to proceed.');
+    return;
+  }
 
-    setIsProcessing(true);
-    
-    try {
-      const getToneInstructions = (tone) => {
-        switch(tone) {
-          case 'formal':
-            return `FORMAL UNBIASED TONE:
+  setIsProcessing(true);
+
+  try {
+    const getToneInstructions = (tone) => {
+      switch (tone) {
+        case 'formal':
+          return `FORMAL UNBIASED TONE:
 - Write in neutral, professional journalism style
 - Use formal language without contractions
 - Maintain objectivity and balance
 - Use "The film" instead of "The film's got"
 - Professional headlines and reporting tone
 - No playful elements or casual expressions`;
-          case 'reports':
-            return `REPORTS COPY TONE:
+        case 'reports':
+          return `REPORTS COPY TONE:
 - Add ": Reports" at the end of the headline
 - Use cautious language like "reportedly", "according to sources", "it is reported that"
 - Mention this is based on unconfirmed reports from other media
 - Maintain neutral tone but acknowledge the speculative nature
 - Use phrases like "if reports are to be believed", "sources suggest"`;
-          default:
-            return `PLAYFUL HUMAN TONE (Cinema Express Style):
+        default:
+          return `PLAYFUL HUMAN TONE (Cinema Express Style):
 - Conversational, warm, and engaging
 - Use contractions (it's, don't, we're)
 - Be playful with trailers, songs, and announcements
 - Write like chatting with fellow film lovers
 - Natural excitement and personality`;
-        }
-      };
+      }
+    };
 
-      const getContentTypeInstructions = (contentType) => {
-        switch(contentType) {
-          case 'quotes':
-            return `QUOTES COPY FORMAT:
+    const getContentTypeInstructions = (contentType) => {
+      switch (contentType) {
+        case 'quotes':
+          return `QUOTES COPY FORMAT:
 - Pick the most engaging/spicy quote as the central focus
 - Structure the article around this key quote
 - Provide context about when/where this was said
 - Add relevant background about the celebrity/topic
 - Use the quote to drive the narrative
 - Headline should highlight the key quote or its implication`;
-          case 'trailer':
-            return `TRAILER/TEASER FORMAT:
+        case 'trailer':
+          return `TRAILER/TEASER FORMAT:
 - Headline format: "[Movie Name] trailer: [description]" or "[Movie Name] teaser: [description]"
 - Describe key scenes, tone, and visual highlights
 - Mention cast appearances and standout moments
 - Include technical aspects like music, cinematography if notable
 - Build anticipation and excitement`;
-          case 'song':
-            return `SONG FORMAT:
+        case 'song':
+          return `SONG FORMAT:
 - Headline format: "'[Song Name]' from [Movie Name]: [description]"
 - Describe the musical style, mood, and feel
 - Mention singers, composers, lyricists
 - Describe visuals if it's a video song
 - Include any dance sequences or picturisation details`;
-          case 'firstlook':
-            return `FIRST LOOK POSTER FORMAT:
+        case 'firstlook':
+          return `FIRST LOOK POSTER FORMAT:
 - Headline format: "[Movie Name] first look: [description]"
 - Describe the poster's visual elements, mood, and style
 - Mention character looks, costumes, settings visible
 - Discuss the poster's design and what it reveals about the film
 - Build curiosity about the character or story`;
-          default:
-            return `GENERIC FORMAT:
+        default:
+          return `GENERIC FORMAT:
 - Standard news article structure
 - Flexible headline based on the news content
 - Comprehensive coverage of the topic
 - Include all relevant details and context`;
-        }
-      };
+      }
+    };
 
-      const prompt = `You are an entertainment journalist for Cinema Express, India's leading film publication.
+    const prompt = `You are an entertainment journalist for Cinema Express, India's leading film publication.
 
 INPUT INFORMATION:
 - News Update Link/Content: ${inputs.newsLink}
@@ -141,50 +141,54 @@ RESPONSE FORMAT - ONLY JSON:
 
 DO NOT include any text outside this JSON structure.`;
 
- // --- REPLACE DIRECT ANTHROPIC CALL WITH THIS ---
-// --- START REPLACEMENT: call your serverless API instead of Anthropic directly ---
-const serverRes = await fetch('/api/generate', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ prompt, model: 'claude-sonnet-4-20250514', max_tokens: 1500 })
-});
+    // ✅ call serverless API
+    const serverRes = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt,
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1500,
+      }),
+    });
 
-let data;
-try {
-  data = await serverRes.json();
-} catch (err) {
-  console.error('Failed parsing JSON from /api/generate', err);
-  throw new Error('Invalid JSON from server');
-}
-
-if (!serverRes.ok) {
-  console.error('Server returned error from /api/generate:', data);
-  // show a useful error message for debugging
-  throw new Error(data?.error || data?.message || 'Server error calling /api/generate');
-}
-const responseText = (data && data.content && data.content[0] && data.content[0].text)
-  ? data.content[0].text
-  : JSON.stringify(data);
-     
-      // Clean up potential markdown formatting
-      responseText = responseText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      
-      const result = JSON.parse(responseText);
-      
-      setOutput({
-        headline: result.headline || '',
-        strap: result.strap || '',
-        article: result.article || '',
-        seoKeywords: result.seo_keywords || []
-      });
-      
-    } catch (error) {
-      console.error('Error generating article:', error);
-      alert('Sorry, there was an error processing your request. Please try again.');
-    } finally {
-      setIsProcessing(false);
+    let data;
+    try {
+      data = await serverRes.json();
+    } catch (err) {
+      console.error('Failed parsing JSON from /api/generate', err);
+      throw new Error('Invalid JSON from server');
     }
-  };
+
+    if (!serverRes.ok) {
+      console.error('Server returned error from /api/generate:', data);
+      throw new Error(data?.error || data?.message || 'Server error calling /api/generate');
+    }
+
+    let responseText =
+      data?.content?.[0]?.text || JSON.stringify(data);
+
+    // ✅ safe cleanup (reassign to let, not const)
+    responseText = responseText
+      .replace(/```json\n?/g, '')
+      .replace(/```\n?/g, '')
+      .trim();
+
+    const result = JSON.parse(responseText);
+
+    setOutput({
+      headline: result.headline || '',
+      strap: result.strap || '',
+      article: result.article || '',
+      seoKeywords: result.seo_keywords || [],
+    });
+  } catch (error) {
+    console.error('Error generating article:', error);
+    alert('Sorry, there was an error processing your request. Please try again.');
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
   const copyToClipboard = (text, type) => {
     navigator.clipboard.writeText(text).then(() => {
