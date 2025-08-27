@@ -162,16 +162,6 @@ if (!serverRes.ok) {
   // show a useful error message for debugging
   throw new Error(data?.error || data?.message || 'Server error calling /api/generate');
 }
-
-// Anthropic text is usually at data.content[0].text
-const responseText = (data && data.content && data.content[0] && data.content[0].text)
-  ? data.content[0].text
-  : JSON.stringify(data);
-// --- END REPLACEMENT ---
-
-
-// data is the JSON returned by your serverless function.
-// The Anthropics Messages API returns text at data.content[0].text in your server response
 const responseText = (data && data.content && data.content[0] && data.content[0].text)
   ? data.content[0].text
   : JSON.stringify(data);
