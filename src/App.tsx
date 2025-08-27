@@ -165,11 +165,7 @@ if (!serverRes.ok) {
 const responseText = (data && data.content && data.content[0] && data.content[0].text)
   ? data.content[0].text
   : JSON.stringify(data);
-
-
-      const data = await response.json();
-      let responseText = data.content[0].text;
-      
+     
       // Clean up potential markdown formatting
       responseText = responseText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
       
