@@ -141,19 +141,26 @@ RESPONSE FORMAT - ONLY JSON:
 
 DO NOT include any text outside this JSON structure.`;
 
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1500,
-          messages: [
-            { role: "user", content: prompt }
-          ]
-        })
-      });
+ // --- REPLACE DIRECT ANTHROPIC CALL WITH THIS ---
+const serverRes = await fetch('/api/generate', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ prompt, model: 'claude-sonnet-4-20250514', max_tokens: 1500 })
+});
+
+const data = await serverRes.json().catch(() => null);
+
+if (!serverRes.ok) {
+  console.error('Server error from /api/generate:', data);
+  throw new Error((data && (data.error || data.message)) || 'Server returned an error');
+}
+
+// data is the JSON returned by your serverless function.
+// The Anthropics Messages API returns text at data.content[0].text in your server response
+const responseText = (data && data.content && data.content[0] && data.content[0].text)
+  ? data.content[0].text
+  : JSON.stringify(data);
+
 
       const data = await response.json();
       let responseText = data.content[0].text;
